@@ -1,3 +1,7 @@
+.DS_Store
+.Rapp*
+barbera_paper.pdf
+
 .idea/
 get_data/config.py
 *.env
