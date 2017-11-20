@@ -3,12 +3,70 @@ import time
 import csv
 import json
 import datetime
+from urllib.parse import quote_plus
+from base64 import b64encode
+import requests
 import copy
 import geopy
 import geotext
 import pycountry
 import tweepy
 import config
+
+TWITTER_ENDPOINT = 'https://api.twitter.com/'
+OAUTH2_TOKEN_URL = TWITTER_ENDPOINT + 'oauth2/token'
+FOLLOWERS_IDS_URL = TWITTER_ENDPOINT + '1.1/followers/ids.json'
+USERS_URL = TWITTER_ENDPOINT + '1.1/users/lookup.json'
+NO_MORE_RESULTS = 17
+RATE_LIMIT_CODE = 88
+
+def get_tweepy_api(twitter_accnt_num):
+    auth = tweepy.OAuthHandler(
+        config.twitter_api_accnts[twitter_accnt_num]['consumer_key'],
+        config.twitter_api_accnts[twitter_accnt_num]['consumer_secret']
+    )
+    auth.set_access_token(
+        config.twitter_api_accnts[twitter_accnt_num]['access_token'],
+        config.twitter_api_accnts[twitter_accnt_num]['access_token_secret']
+    )
+    return tweepy.API(auth)
+
+def twitter_api_call(url, auth, params, method='get'):
+    headers = {
+        'Authorization': auth
+    }
+    if method == 'get':
+        r = requests.get(url, params=params, headers=headers)
+    else:
+        r = requests.post(url, data=params, headers=headers)
+    return r.json()
+
+def get_raw_twitter_auth(twitter_accnt_num):
+    key = config.twitter_api_accnts[twitter_accnt_num]['consumer_key']
+    secret = config.twitter_api_accnts[twitter_accnt_num]['consumer_secret']
+
+    bearer_creds = get_bearer_credentials(key, secret)
+    return "Bearer " + get_access_token(bearer_creds)
+
+def get_bearer_credentials(consumer_key, consumer_secret):
+    encoded_ck = quote_plus(consumer_key)
+    encoded_cs = quote_plus(consumer_secret)
+
+    credentials = '{}:{}'.format(encoded_ck, encoded_cs)
+
+    b64credentials = b64encode(credentials.encode('ascii'))
+    return b64credentials.decode('ascii')
+
+
+def get_access_token(bearer_creds):
+    auth = "Basic " + bearer_creds
+    body = {'grant_type':'client_credentials'}
+    headers = {
+        'Authorization': auth,
+        'Content-Type': "application/x-www-form-urlencoded;charset=UTF-8"
+    }
+    r = requests.post(OAUTH2_TOKEN_URL, headers=headers, data=body)
+    return r.json()['access_token']
 
 def is_same_country(country_iso_2_code, country_str):
     country = pycountry.countries.get(alpha_2=country_iso_2_code)
@@ -104,6 +162,10 @@ def catch_exception_decorator(f):
             try:
                 return f(*args, **kwargs)
             except tweepy.TweepError as err:
+                if len(err) > 0 and 'code' in err[0] and err[0]['code'] == 50:
+                    # user not found error
+                    print("User not found error in {}: {}".format(f.__name__, err))
+                    return None
                 print("Rate limit error in {}: {}".format(f.__name__, err))
                 time.sleep(15 * 60 + 0.5)
             except Exception as err:
@@ -112,14 +174,16 @@ def catch_exception_decorator(f):
     return wrapper
 
 @catch_exception_decorator
-def call_twitter_api(f, *args, **kwargs):
+def tweepy_api_call(f, *args, **kwargs):
     return f(*args, **kwargs)
 
-def is_active(user, twitter_api, months_ago_last_tweet):
+def is_active(user_dict, twitter_api, months_ago_last_tweet):
+    if user_dict['protected']:
+        return False
 
-    last_tweets = call_twitter_api(
+    last_tweets = tweepy_api_call(
         twitter_api.user_timeline,
-        user_id=user.id,
+        user_id=user_dict['id_str'],
         count=1,
     )
 

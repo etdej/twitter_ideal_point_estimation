@@ -1,9 +1,6 @@
 import os
 import json
 import argparse
-import tweepy
-
-import config
 import utils
 
 def parse_args():
@@ -34,7 +31,7 @@ def parse_args():
                         default=100, dest='user_min_tweets', required=False,
                         help="Minimum number of tweets a user must have made")
     return parser.parse_args()
-
+    
 def main(
     twitter_accnt_num,
     country_code, 
@@ -46,36 +43,87 @@ def main(
     min_followers_elite,
     min_followers_user,
     user_min_tweets):
+    
+
+    def process_user(user_dict, users_dict, rejected_users, elite, tweepy_api):
+        '''
+        updates users_dict or rejected_users
+        '''
+        uid = user_dict['id_str']
+
+        if uid in rejected_users:
+            print("\t\tFollower " + uid + " already rejected. Simply skipping...")
+            return
+            
+        elif uid in users_dict:
+            print("\t\tFollower " + uid + " already saved. Simply adding this elite...")
+            users_dict[uid]['elites'].append(elite)
+            return
+            
+        elif user_dict['followers_count'] < min_followers_user:
+            print("\t\tSkipping follower " + uid + ": not enough followers")
+            rejected_users.add(uid)
+            return
+            
+        elif not user_dict['location']:
+            print("\t\tSkipping follower " + uid + ": no location data")
+            rejected_users.add(uid)
+            return
+            
+        elif user_dict['statuses_count'] < user_min_tweets:
+            print("\t\tSkipping follower " + uid + ": not enough tweets")
+            rejected_users.add(uid)
+            return
+
+        u_is_active = utils.is_active(user_dict, tweepy_api, max_tweet_user)
+        if not u_is_active:
+            print("\t\tSkipping follower " + uid + ": twitter account not active")
+            rejected_users.add(uid)
+            return
+            
+        location_data = utils.get_geography_data(user_dict['location'])
+        belongs_to_country = utils.is_same_country(country_code, location_data[1])
+
+        if not belongs_to_country:
+            print("\t\tSkipping follower " + uid + ": doesn't belong to target country")
+            rejected_users.add(uid)
+            return
+            
+        print("\t\tSaving follower " + uid + " ...")
+        users_dict[uid] = {
+            'id': uid,
+            'city': location_data[0],
+            'country': location_data[1],
+            'latitude': location_data[2][0],
+            'longitude': location_data[2][1],
+            'elites': [elite]
+        }
 
     print("Starting...")
 
-    auth = tweepy.OAuthHandler(
-        config.twitter_api_accnts[twitter_accnt_num]['twitter_consumer_key'],
-        config.twitter_api_accnts[twitter_accnt_num]['twitter_consumer_secret']
-    )
-    auth.set_access_token(
-        config.twitter_api_accnts[twitter_accnt_num]['twitter_access_token'],
-        config.twitter_api_accnts[twitter_accnt_num]['twitter_access_token_secret']
-    )
-    twitter_api = tweepy.API(auth)
+    tweepy_api = utils.get_tweepy_api(twitter_accnt_num)
+    raw_auth = utils.get_raw_twitter_auth(twitter_accnt_num)
 
     elites_handles_lst = utils.json_load(f_elites)
     users_dict = {}
     rejected_users = set()
     elites_dict = {}
-    print("Starting loop over users...")
-    for elite_name in elites_handles_lst:
-        elite = utils.call_twitter_api(twitter_api.get_user, screen_name=elite_name)
 
+    for elite_name in elites_handles_lst:
+        elite = utils.tweepy_api_call(tweepy_api.get_user, screen_name=elite_name)
+        if not elite:
+            print("\tSkipping " + elite_name + ": user name not found")
+            continue
+    
         print("#### Elite: {} ####".format(elite_name))
 
-        e_is_active = utils.is_active(elite, twitter_api, max_tweet_elite)
+        if elite.followers_count < min_followers_elite:
+            print("\tSkipping " + elite_name + ": not enough followers on twitter")
+            continue
 
+        e_is_active = utils.is_active(elite._json, tweepy_api, max_tweet_elite)
         if not e_is_active:
             print("\tSkipping " + elite_name + ": twitter account not active")
-            continue
-        elif elite.followers_count < min_followers_elite:
-            print("\tSkipping " + elite_name + ": not enough followers on twitter")
             continue
         
         print("\tSaving " + elite_name + " ...")
@@ -83,67 +131,97 @@ def main(
         elite_id = elite.id_str
         elites_dict[elite_id] = elite_dict
 
-        cnt = 0
-        for user in utils.cursor_iterator(tweepy.Cursor(twitter_api.followers, user_id=elite.id).items()):
-            cnt += 1
-            print("\t{} follower no {}: {}".format(elite.screen_name, cnt, user.id))
-            
-            if user.id_str in rejected_users:
-                print("\t\tFollower " + user.id_str + " already rejected. Simply skipping...")
-                continue
-            elif user.id_str in users_dict:
-                print("\t\tFollower " + user.id_str + " already saved. Simply adding this elite...")
-                users_dict[user.id_str]['elites'].append(elite_name)
-                continue
-            elif user.followers_count < min_followers_user:
-                print("\t\tSkipping follower " + user.id_str + ": not enough followers")
-                rejected_users.add(user.id_str)
-                continue
-            elif not user.location:
-                print("\t\tSkipping follower " + user.id_str + ": no location data")
-                rejected_users.add(user.id_str)
-                continue
+        get_ids_params = {
+            'user_id': elite.id_str,
+            'stringify_ids': 'true',
+        }
 
-            u_is_active = utils.is_active(user, twitter_api, max_tweet_user)
-            if not u_is_active:
-                print("\t\tSkipping follower " + user.id_str + ": twitter account not active")
-                rejected_users.add(user.id_str)
-                continue
-            elif user.statuses_count < user_min_tweets:
-                print("\t\tSkipping follower " + user.id_str + ": not enough tweets")
-                rejected_users.add(user.id_str)
-                continue
+        cursor = -1
+        not_done = True
+        users_lst = []
+        cnt=0
+        while not_done:
+            get_ids_params['cursor'] = cursor
+            resp = utils.twitter_api_call(utils.FOLLOWERS_IDS_URL, raw_auth, get_ids_params)
+            if 'errors' in resp:
+                err_code = resp['errors'][0]['code'] 
+                if err_code == utils.NO_MORE_RESULTS:
+                    print('\tDone. No more follower ids.')
+                    not_done = False
 
-            location_data = utils.get_geography_data(user.location)
-            belongs_to_country = utils.is_same_country(country_code, location_data[1])
-
-            if not belongs_to_country:
-                print("\t\tSkipping follower " + user.id_str + ": doesn't belong to target country")
-                rejected_users.add(user.id_str)
+                elif err_code == utils.RATE_LIMIT_CODE:
+                    print('\tRate limit reached for GET followers ids.')
+                    
+                    if len(users_lst) > 0:
+                        print('\tProcessing users...')
+                        for user in users_lst:
+                            process_user(user, users_dict, rejected_users, elite_name, tweepy_api)
+                        cnt+=len(users_lst)
+                        users_lst = []
+                    else:
+                        print('\tSleeping...')
+                        time.sleep(15*60+0.1)
+                else:
+                    print("\t(Exiting) Other error occurred: ", resp['errors'])
+                    return
                 continue
+            cursor = resp['next_cursor']
+            i = 0
+            while i<5000:
+                ids = resp['ids'][i:i+100]
+                params = {
+                    'user_id': ','.join(ids)
+                }
+                users = utils.twitter_api_call(utils.USERS_URL, raw_auth, params, method='post')
+                if 'errors' in users:
+                    err_code = users['errors'][0]['code'] 
+                    if err_code == utils.NO_MORE_RESULTS:
+                        print('\tDone. No more ids.')
+                        not_done = False
+                        break
+                    elif err_code == utils.RATE_LIMIT_CODE:
+                        print('\tRate limit reached for GET users')
+                        
+                        if len(users_lst) > 0:
+                            print("\tProcessing users....")
+                            for user in users_lst:
+                                process_user(user, users_dict, rejected_users, elite_name, tweepy_api)
+                            users_lst = []
+                        else:
+                            print('\tSleeping...')
+                            time.sleep(15*60+0.1)
+                    else:
+                        print("\t(Exiting) Other error occurred: ", users['errors'])
+                        return
+                        
+                else:
+                    users_lst += users
+                    i+=100
 
-            print("\t\tSaving follower " + user.id_str + " ...")
-            users_dict[user.id_str] = {
-                'id': user.id_str,
-                'city': location_data[0],
-                'country': location_data[1],
-                'latitude': location_data[2][0],
-                'longitude': location_data[2][1],
-                'elites': [elite_name]
-            }
-        print("\tAnalyzed {} followers for elite {}".format(cnt, elite_name))
+        if len(users_lst) > 0:
+            cnt+=len(users_lst)
+            print("\tProcessing users....")
+            for user in users_lst:
+                process_user(user, users_dict, rejected_users, elite_name, tweepy_api)
+            users_lst = []
+
+        print("\tAnalysed {} followers for {}".format(cnt, elite_name))
 
     if len(users_dict) > 0:
+        print("Saving user data...")
         utils.json_dump(users_dict, f_out_users)
     else:
         print("!!!! No users matched !!!!")
 
     if len(elites_dict) > 0:
+        print("Saving entity data...")
         fields = list(list(elites_dict.values())[0].keys())
         utils.write_csv(elites_dict, f_out_elites, fields)
     else:
         print("!!!! No elites matched !!!!")
-        
+    
+    print("We are done here!")
+
 if __name__ == "__main__":
     args = parse_args()
     main(**vars(args))
