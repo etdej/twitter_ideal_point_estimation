@@ -1,5 +1,6 @@
 import math
 import utils
+import random
 
 # number of splits
 N = 10
@@ -7,6 +8,7 @@ N = 10
 fin = 'fr_elites_handles.json'
 
 twitters = utils.json_load(fin)
+random.shuffle(twitters)
 M = len(twitters)
 k = math.ceil(M/N)
 separated = [twitters[i:i+k] for i in range(0, M, k)]

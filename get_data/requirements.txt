@@ -49,6 +49,7 @@ pycparser==2.18
 Pygments==2.2.0
 PyJWT==1.5.3
 PySocks==1.6.7
+pystan==2
 python-dateutil==2.6.1
 python-dotenv==0.7.1
 python-twitter==3.3

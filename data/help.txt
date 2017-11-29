@@ -1,0 +1,5 @@
+sbatch run_job.sh
+squeue -u dam740
+sacct -j3071342 -oJobID,JobName,ExitCode,NNodes,NCPUS,MaxRSS,AveRSS,MaxVMSize,AveVMSize,ReqMem,Elapsed
+
+first hpc job ==

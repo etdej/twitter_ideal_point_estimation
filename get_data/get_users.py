@@ -2,6 +2,21 @@ import os
 import json
 import argparse
 import utils
+import numpy as np
+
+def write_results(users_dict, f_out_users, elites_dict, f_out_elites, n_elites):
+    if len(users_dict) > 0:
+        print("Saving user data for {} elites...".format(n_elites))
+        utils.json_dump(users_dict, f_out_users)
+    else:
+        print("!!!! No users matched !!!!")
+
+    if len(elites_dict) > 0:
+        print("Saving entity data for {} elites...".format(n_elites))
+        fields = list(list(elites_dict.values())[0].keys())
+        utils.write_csv(elites_dict, f_out_elites, fields)
+    else:
+        print("!!!! No elites matched !!!!")
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Get elites and users data.')
@@ -30,6 +45,9 @@ def parse_args():
     parser.add_argument('--user_min_tweets', '-umt', type=int,
                         default=100, dest='user_min_tweets', required=False,
                         help="Minimum number of tweets a user must have made")
+    parser.add_argument('--prob_reject', '-pr', type=float,
+                        default=0., dest='prob_reject', required=False,
+                        help="Probability of rejecting a user - only a subset of the users are processed")
     return parser.parse_args()
     
 def main(
@@ -42,7 +60,8 @@ def main(
     max_tweet_user,
     min_followers_elite,
     min_followers_user,
-    user_min_tweets):
+    user_min_tweets,
+    prob_reject):
     
 
     def process_user(user_dict, users_dict, rejected_users, elite, tweepy_api):
@@ -56,10 +75,10 @@ def main(
             return
             
         elif uid in users_dict:
-            print("\t\tFollower " + uid + " already saved. Simply adding this elite...")
+            print("\t\tFollower " + uid + " already saved. Simply adding this user...")
             users_dict[uid]['elites'].append(elite)
             return
-            
+
         elif user_dict['followers_count'] < min_followers_user:
             print("\t\tSkipping follower " + uid + ": not enough followers")
             rejected_users.add(uid)
@@ -110,27 +129,30 @@ def main(
     elites_dict = {}
 
     for elite_name in elites_handles_lst:
+        if len(elites_dict) > 0 and len(elites_dict)%2 == 0:
+            write_results(users_dict, f_out_users, elites_dict, f_out_elites, len(elites_dict))
+
         elite = utils.tweepy_api_call(tweepy_api.get_user, screen_name=elite_name)
         if not elite:
-            print("\tSkipping " + elite_name + ": user name not found")
+            print("\tSkipping elite " + elite_name + ": user name not found")
             continue
     
         print("#### Elite: {} ####".format(elite_name))
 
         if elite.followers_count < min_followers_elite:
-            print("\tSkipping " + elite_name + ": not enough followers on twitter")
+            print("\tSkipping elite " + elite_name + ": not enough followers on twitter")
             continue
 
         e_is_active = utils.is_active(elite._json, tweepy_api, max_tweet_elite)
         if not e_is_active:
-            print("\tSkipping " + elite_name + ": twitter account not active")
+            print("\tSkipping elite " + elite_name + ": twitter account not active")
             continue
         
         print("\tSaving " + elite_name + " ...")
         elite_dict = utils.remove_undesired_elite_fields(elite)
         elite_id = elite.id_str
         elites_dict[elite_id] = elite_dict
-
+        
         get_ids_params = {
             'user_id': elite.id_str,
             'stringify_ids': 'true',
@@ -167,10 +189,12 @@ def main(
                 continue
             cursor = resp['next_cursor']
             i = 0
+
             while i<5000:
                 ids = resp['ids'][i:i+100]
+                ids_subset = np.random.choice(ids, int(len(ids)*(1-prob_reject)))
                 params = {
-                    'user_id': ','.join(ids)
+                    'user_id': ','.join(ids_subset)
                 }
                 users = utils.twitter_api_call(utils.USERS_URL, raw_auth, params, method='post')
                 if 'errors' in users:
@@ -186,6 +210,7 @@ def main(
                             print("\tProcessing users....")
                             for user in users_lst:
                                 process_user(user, users_dict, rejected_users, elite_name, tweepy_api)
+                            cnt+=len(users_lst)
                             users_lst = []
                         else:
                             print('\tSleeping...')
@@ -207,19 +232,7 @@ def main(
 
         print("\tAnalysed {} followers for {}".format(cnt, elite_name))
 
-    if len(users_dict) > 0:
-        print("Saving user data...")
-        utils.json_dump(users_dict, f_out_users)
-    else:
-        print("!!!! No users matched !!!!")
-
-    if len(elites_dict) > 0:
-        print("Saving entity data...")
-        fields = list(list(elites_dict.values())[0].keys())
-        utils.write_csv(elites_dict, f_out_elites, fields)
-    else:
-        print("!!!! No elites matched !!!!")
-    
+    write_results(users_dict, f_out_users, elites_dict, f_out_elites, len(elites_dict))
     print("We are done here!")
 
 if __name__ == "__main__":

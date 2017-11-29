@@ -19,6 +19,7 @@ FOLLOWERS_IDS_URL = TWITTER_ENDPOINT + '1.1/followers/ids.json'
 USERS_URL = TWITTER_ENDPOINT + '1.1/users/lookup.json'
 NO_MORE_RESULTS = 17
 RATE_LIMIT_CODE = 88
+NO_USER_FOUND_CODE = 50
 
 def get_tweepy_api(twitter_accnt_num):
     auth = tweepy.OAuthHandler(
@@ -137,7 +138,10 @@ def remove_undesired_elite_fields(elite):
         'is_translation_enabled',
         'is_translator',
         'notifications',
-        'translator_type'
+        'translator_type',
+        'utc_offset',
+        'time_zone'
+        ''
     ])
     x = copy.deepcopy(elite_dict)
     for k in elite_dict.keys():
@@ -162,12 +166,16 @@ def catch_exception_decorator(f):
             try:
                 return f(*args, **kwargs)
             except tweepy.TweepError as err:
-                if len(err) > 0 and 'code' in err[0] and err[0]['code'] == 50:
+                if err.api_code == NO_USER_FOUND_CODE:
                     # user not found error
                     print("User not found error in {}: {}".format(f.__name__, err))
-                    return None
-                print("Rate limit error in {}: {}".format(f.__name__, err))
-                time.sleep(15 * 60 + 0.5)
+                    return
+                elif err.api_code == RATE_LIMIT_CODE:
+                    print("Rate limit error in {}: {}".format(f.__name__, err))
+                    time.sleep(15 * 60 + 0.5)
+                else:
+                    print("Other error in {}: {}".format(f.__name__, err))
+                    return
             except Exception as err:
                 print("Error in {}: {}".format(f.__name__, err))
                 raise
@@ -187,7 +195,7 @@ def is_active(user_dict, twitter_api, months_ago_last_tweet):
         count=1,
     )
 
-    if len(last_tweets) < 1:
+    if not last_tweets or len(last_tweets) < 1:
         return False
 
     last_date_allowed = datetime.datetime.now() - datetime.timedelta(weeks=4*months_ago_last_tweet)
