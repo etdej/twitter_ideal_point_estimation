@@ -3,6 +3,7 @@ import json
 import argparse
 import utils
 import numpy as np
+import time
 
 def write_results(users_dict, f_out_users, elites_dict, f_out_elites, n_elites):
     if len(users_dict) > 0:
@@ -148,7 +149,7 @@ def main(
             print("\tSkipping elite " + elite_name + ": twitter account not active")
             continue
         
-        print("\tSaving " + elite_name + " ...")
+        print("\tSaving elite " + elite_name + " ...")
         elite_dict = utils.remove_undesired_elite_fields(elite)
         elite_id = elite.id_str
         elites_dict[elite_id] = elite_dict
@@ -171,7 +172,7 @@ def main(
                     print('\tDone. No more follower ids.')
                     not_done = False
 
-                elif err_code == utils.RATE_LIMIT_CODE:
+                elif err_code == utils.RATE_LIMIT_CODE or err_code == utils.OVER_CAPACITY_CODE:
                     print('\tRate limit reached for GET followers ids.')
                     
                     if len(users_lst) > 0:
@@ -191,6 +192,10 @@ def main(
             i = 0
 
             while i<5000:
+                if i >= len(resp['ids']):
+                    print("\tIndex i is bigger than resp['ids']. Leng: {} | i: {}".format(len(resp['ids']), i))
+                    not_done = False
+                    break
                 ids = resp['ids'][i:i+100]
                 ids_subset = np.random.choice(ids, int(len(ids)*(1-prob_reject)))
                 params = {
@@ -198,12 +203,12 @@ def main(
                 }
                 users = utils.twitter_api_call(utils.USERS_URL, raw_auth, params, method='post')
                 if 'errors' in users:
-                    err_code = users['errors'][0]['code'] 
+                    err_code = users['errors'][0]['code']
                     if err_code == utils.NO_MORE_RESULTS:
                         print('\tDone. No more ids.')
                         not_done = False
                         break
-                    elif err_code == utils.RATE_LIMIT_CODE:
+                    elif err_code == utils.RATE_LIMIT_CODE or err_code == utils.OVER_CAPACITY_CODE:
                         print('\tRate limit reached for GET users')
                         
                         if len(users_lst) > 0:

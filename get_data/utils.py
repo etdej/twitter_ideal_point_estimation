@@ -20,6 +20,8 @@ USERS_URL = TWITTER_ENDPOINT + '1.1/users/lookup.json'
 NO_MORE_RESULTS = 17
 RATE_LIMIT_CODE = 88
 NO_USER_FOUND_CODE = 50
+OVER_CAPACITY_CODE = 130
+PAGE_NOT_EXISTS_CODE = 34
 
 def get_tweepy_api(twitter_accnt_num):
     auth = tweepy.OAuthHandler(
@@ -166,15 +168,16 @@ def catch_exception_decorator(f):
             try:
                 return f(*args, **kwargs)
             except tweepy.TweepError as err:
-                if err.api_code == NO_USER_FOUND_CODE:
+                err_code = err.api_code
+                if err_code == NO_USER_FOUND_CODE or err_code == PAGE_NOT_EXISTS_CODE:
                     # user not found error
                     print("User not found error in {}: {}".format(f.__name__, err))
                     return
-                elif err.api_code == RATE_LIMIT_CODE:
+                elif err_code == RATE_LIMIT_CODE or err_code == OVER_CAPACITY_CODE:
                     print("Rate limit error in {}: {}".format(f.__name__, err))
                     time.sleep(15 * 60 + 0.5)
                 else:
-                    print("Other error in {}: {}".format(f.__name__, err))
+                    print("Other error in {}: code: {} | err: {}".format(f.__name__, err_code, err))
                     return
             except Exception as err:
                 print("Error in {}: {}".format(f.__name__, err))

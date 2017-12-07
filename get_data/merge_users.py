@@ -2,12 +2,8 @@
 Merge all the users that different twitter API accounts fetched into one single file.
 Applies an additional filter on the users based on the number of elites they follow.
 '''
-import os
 import json
 import argparse
-import tweepy
-
-import config
 import utils
 
 def parse_args():
@@ -55,7 +51,7 @@ def main(**kwargs):
             n_rejected += 1
 
     print("Number of rejected users because don't follow enough elite accounts: ", n_rejected)
-
+    print("Final number of users saved: ", len(final_users_dict))
     fields = list(list(final_users_dict.values())[0].keys())
     if len(final_users_dict) > 0:
         utils.write_csv(final_users_dict, f_out, fields)

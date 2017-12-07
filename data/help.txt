@@ -2,4 +2,54 @@ sbatch run_job.sh
 squeue -u dam740
 sacct -j3071342 -oJobID,JobName,ExitCode,NNodes,NCPUS,MaxRSS,AveRSS,MaxVMSize,AveVMSize,ReqMem,Elapsed
 
-first hpc job ==
+
+JOBID    | name                   | info                                                             | status        | result
+--------------------------------------------------------------------------------------------------------------------------
+3112136  | production             | 1 cpu; 100GB; 1000 iter (500 warm);                              | exit: timeout
+3148410  | production_barberalike | 1 cpu; 100GB; 500 iter (100 warm);                               | exit: timeout
+3151899  | barbera_like_2cpus     | 2 cpus; 100GB; 500 iter (100 warm); ; 100GB; 500 iter (100 warm);| exit: timeout
+3167789  | fourcpus               | 4 cpus; 100GB; 500 iter (100 warm);                              | running
+3184702  | small                  | 2 cpus; 100GB; 150 iter (50 warm);                               | exit; timeout
+3184705  | zero_small             | 2 cpus; 100GB; 150 iter (50 warm); all phi init at 0             | exit; timeout
+3186373  | smallmem               | 4 cpus; 10GB; 500 iter (100 warm);                               | running
+3197617  | smallmemsmall          | 4 cpus; 7GB; 150 iter (50 warm);                                 | running
+3197619  | smalll_1chain          | 4 cpus; 7GB; 150 iter (50 warm); 1 chain                         | running
+3235271  | small2                 | 4 cpus; 10GB; 150 iter (75 warmup); 2 chains                     | running
+3235281  | small2                 | 4 cpus; 10GB; 400 iter (100 warmup); 2chains                     | running
+3238592  | onechain               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | running
+3250805  | mu_alpha               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | running
+3275779  | subset_1chain          | 2 cpus; 10GB; 150 iter (75 warmup); 1chains; user subset         | running
+3275842  | subset_2chain          | 2 cpus; 10GB; 150 iter (75 warmup); 2chains; user subset         | running 
+3275894  | subset_sigalpha        | 2 cpus; 150 iter (75 warmup); 1chains; user subset; sigma_alpha  | running 
+3276474  | random_sub1            | 2 cpus; 150 iter (75 warmup); 1chains; user sub random           | running  
+3276488  | randsub2               | 2 cpus; 150 iter (75 warmup); 2chains; user sub random           | running  
+--------------------------------------------------------------------------------------------------------------------------
+france
+--------------------------------------------------------------------------------------------------------------------------
+3261117  | fr_1chain              | 2 cpus; 10GB; 150 iter (50 warmup); 1chain                       | running
+3261120  | fr_2chain              | 2 cpus; 10GB; 150 iter (50 warmup); 2chains                      | running
+--------------------------------------------------------------------------------------------------------------------------
+stage2
+--------------------------------------------------------------------------------------------------------------------------
+3214671  | twok                   | 2 cpus; 4GB; 2000 iter;                                | exit: timeout   | 3.95GB
+3238717  | ....                   | 20 cpus; 100GB; 500 iter; 1800 users; 18 user/round    | 186 secs; 40GB
+3238923  | ....                   | 20 cpus; 10GB; 2000 iter; 36 users; 18 user/round      | 8.95 secs; 40GB
+3241643  | ....                   | 20 cpus; 60GB; 2000 iter; 1800 users; 18 user/round    | 8.95 secs; 40GB
+
+Common ids from first and second stage to compare correlations:
+[(1, 'us57798'),
+ (3, 'us220142'),
+ (4, 'us155350'),
+ (5, 'us36718'),
+ (6, 'us223905'),
+ (8, 'us203991'),
+ (12, 'us152094'),
+ (13, 'us209778'),
+ (15, 'us229894'),
+ (17, 'us129438')]
+
+Stage 2:
+    - Run array of jobs for each 1800 users -> int(301536/1800) = 167 (300.600 users total)
+    - expected time for each job: 186/(1800/18)*4*100 = 744 sec = 12.4 mins
+    - required mem for each: 60GB
+    - required cpus: 20

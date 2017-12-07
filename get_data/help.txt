@@ -41,11 +41,12 @@ in crackle3:
 /usr/bin/time -vo log_no_media_10.time python get_users.py 9 FR fr_elites_handles_no_media_10.json fr_elites_data_no_media_10.csv fr_users_data_no_media_10.json &> log_no_media_10.out &
 
 Probability of reject should be around 0.76 to get a probability of acceptance of 0.235.
-Because only around 0.86 of followers actually are fetched by the User/lookup api (the rest, 30%, have changed username or deleted their account).
-So prob of acceptance = x: 
-    x = 1/(5*0.86)
+Because only around 0.86 of followers actually are fetched by the User/lookup api (the rest have changed username or deleted their account).
+So prob of acceptance = x:
+    x = 0.86*0.235
 
-About 20 percent of the accepted users will meet the criteria. So actual probability of acceptence is around 1/5*1/5=1/25
+About 20 percent of the accepted users will meet the criteria. So actual probability of acceptence is around 0.2*0.2=0.04,
+where the second 0.2 indicates the percentage of users that pass the filters.
 
 #### MEDIA ####
 

@@ -9,10 +9,10 @@ def normalize(x):
 
 def main():
     #data_dir = "./"
-    data_dir = "/scratch/dam740/1013/data/"
+    data_dir = "/scratch/dam740/1013/data/stage1/"
     #fin = data_dir + "adj-matrix-US.csv"
-    fin = data_dir + "adj-matrix-subset-us.csv"
-    fin = data_dir + "adj-matrix-US-stage1.csv"
+    #fin = data_dir + "adj-matrix-subset-us.csv"
+    fin = data_dir + "adj-matrix-US-stage1-random.csv"
     adj_matrix = pd.read_csv(fin, index_col=0)
     #removing elites for which we don't know the party
     to_remove = ['pedropierluisi', 'EleanorNorton']
@@ -41,7 +41,6 @@ def main():
     phi = np.zeros(us_party.shape[0])
     phi[us_party[0] == 'D'] = -1
     phi[us_party[0] == 'R'] = 1
-    phi
 
     stan_model ="""
     data {
@@ -74,11 +73,10 @@ def main():
     }"""
 
     stan_init = []
-    n_chains = 2
+    n_chains = 1
     for i in range(n_chains):
         stan_init.append(dict(
             alpha = normalize(np.log(y.sum(axis=0) + 0.0001)),
-            sigma_alpha = 1,
             beta = normalize(np.log(y.sum(axis=1) + 0.0001)),
             mu_beta = 0,
             sigma_beta = 1,
@@ -98,9 +96,9 @@ def main():
     start = time.time()
     samp = sm.sampling(data=stan_data,
                        init=stan_init,
-                       iter=500,
+                       iter=150,
                        thin=2,
-                       warmup=100,
+                       warmup=75,
                        chains=n_chains)
     print("Duration: ", time.time() - start)
 
