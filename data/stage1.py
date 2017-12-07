@@ -8,11 +8,11 @@ def normalize(x):
     return center/center.std()
 
 def main():
-    #data_dir = "./"
-    data_dir = "/scratch/dam740/1013/data/stage1/"
+    data_dir = "./"
+    #data_dir = "/scratch/dam740/1013/data/stage1/"
     #fin = data_dir + "adj-matrix-US.csv"
-    #fin = data_dir + "adj-matrix-subset-us.csv"
-    fin = data_dir + "adj-matrix-US-stage1-random.csv"
+    fin = data_dir + "adj-matrix-subset-us.csv"
+    #fin = data_dir + "adj-matrix-US-stage1-random.csv"
     adj_matrix = pd.read_csv(fin, index_col=0)
     #removing elites for which we don't know the party
     to_remove = ['pedropierluisi', 'EleanorNorton']
@@ -73,7 +73,7 @@ def main():
     }"""
 
     stan_init = []
-    n_chains = 1
+    n_chains = 2
     for i in range(n_chains):
         stan_init.append(dict(
             alpha = normalize(np.log(y.sum(axis=0) + 0.0001)),
@@ -96,14 +96,15 @@ def main():
     start = time.time()
     samp = sm.sampling(data=stan_data,
                        init=stan_init,
-                       iter=150,
+                       iter=3,
                        thin=2,
-                       warmup=75,
+                       warmup=1,
                        chains=n_chains)
     print("Duration: ", time.time() - start)
 
     la = samp.extract()  # return a dictionary of arrays
-
+    print(len(la))
+    print(la)
     for par in la:
       print(par)
       print(la[par].shape)
