@@ -123,7 +123,7 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
 
         return beta, theta
 
-    data_dir = "./"
+    data_dir = "us_results/"
     #data_dir = "/scratch/dam740/1013/data/stage2/"
 
     samples_alpha = pd.read_csv(data_dir + 'samples_alpha.csv')
@@ -134,6 +134,10 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
 
     fin = data_dir + "adj-matrix-US.csv"
     adj_matrix = pd.read_csv(fin, index_col=0)
+
+    to_remove = ['pedropierluisi', 'EleanorNorton']
+    for elite in to_remove:
+      adj_matrix = adj_matrix.drop(elite, axis=1) if elite in adj_matrix else adj_matrix
 
     y = adj_matrix.as_matrix()
     alpha_i = samples_alpha.as_matrix()
