@@ -47,7 +47,7 @@ def metropolis(y, alpha_i, gamma_i, phi_i, mu_beta_i, sigma_beta_i, beta_init, t
         curr = [beta_init, theta_init[chain]]
         i = 0
         start = time.time()
-        print_freq = 10000
+        print_freq = 100000
         for iter in range(iters):
             if iter > 0 and iter%print_freq == 0:
                 print('pid: {} | iter: {}->{} | time: {}'.format(getpid(),
@@ -79,7 +79,6 @@ def metropolis(y, alpha_i, gamma_i, phi_i, mu_beta_i, sigma_beta_i, beta_init, t
 def metropolis_worker(process_id, return_dict, **kwargs):
     samples = metropolis(**kwargs)
     return_dict[process_id] = samples
-    print('pid: {} | done'.format(getpid()))
 
 def main(n_iters, n_warmup, inital_user_ix, n_users):
     def estimation(indexes):
@@ -100,10 +99,14 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
         while ix_out < len(indexes):
             return_dict = manager.dict()
             user_ixs = indexes[ix_out:ix_out+n_parallel_jobs]
+            print("\tComputing {} parallel - 1st uid: {} | last uid: {}".format(n_parallel_jobs, user_ixs[0], user_ixs[-1]))
             ix_out += n_parallel_jobs
             jobs = []
             for i in user_ixs:
-                kwargs['y'] = y[i, :]
+                try:
+                    kwargs['y'] = y[i, :]
+                except:
+                    print("\tError: Len y: {} | uix: {}".format(len(y), i))
                 kwargs['beta_init'] = np.log(np.sum(y[i,:]))
                 kwargs['theta_init'] = np.random.normal(0, 1, size=(2))
                 p = multiprocessing.Process(
@@ -118,13 +121,14 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
                 job.join()
 
             sorted_results = sorted(return_dict.items())
+            print("\tNum results: {}\n\t##########".format(len(sorted_results)))
             beta.extend([np.array(samples)[:, :, 0] for i, samples in sorted_results])
             theta.extend([np.array(samples)[:, :, 1] for i, samples in sorted_results])
 
         return beta, theta
 
-    data_dir = "fr_results/"
-    data_dir = "/scratch/dam740/1013/data/stage2/france/"
+    data_dir = "fr_results/run-3261117/"
+    #data_dir = "/scratch/dam740/1013/data/stage2/france/"
 
     samples_alpha = pd.read_csv(data_dir + 'fr_samples_alpha.csv')
     samples_phi = pd.read_csv(data_dir + 'fr_samples_phi.csv')
@@ -144,7 +148,7 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
 
     start = time.time()
     beta, theta = estimation(range(inital_user_ix,inital_user_ix+n_users))
-    print('Duration: ', time.time() - start)
+    print('Duration: {}'.format(time.time() - start))
 
     # for each user take avg between chains to get only 1 value per iteration
     beta_avg = np.mean(beta, axis=1)

@@ -2,9 +2,9 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=20
-#SBATCH --time=30:00
-#SBATCH --mem=60000
-#SBATCH --job-name=stage2_test
+#SBATCH --time=04:00:00
+#SBATCH --mem=70000
+#SBATCH --job-name=fr_stage2
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=dam740@nyu.edu
 #SBATCH --output=stage2_%A_%a.out

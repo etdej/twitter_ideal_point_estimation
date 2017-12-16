@@ -14,15 +14,15 @@ JOBID    | name                   | info                                        
 3186373  | smallmem               | 4 cpus; 10GB; 500 iter (100 warm);                               | exit; timeout
 3197617  | smallmemsmall          | 4 cpus; 7GB; 150 iter (50 warm);                                 | exit; timeout
 3197619  | smalll_1chain          | 4 cpus; 7GB; 150 iter (50 warm); 1 chain                         | exit; timeout
-3235271  | small2                 | 4 cpus; 10GB; 150 iter (75 warmup); 2 chains                     | running
-3235281  | small2                 | 4 cpus; 10GB; 400 iter (100 warmup); 2chains                     | running
-3238592  | onechain               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | running
-3250805  | mu_alpha               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | running
+3235271  | small2                 | 4 cpus; 10GB; 150 iter (75 warmup); 2 chains                     | exit; timeout
+3235281  | small2                 | 4 cpus; 10GB; 400 iter (100 warmup); 2chains                     | exit; timeout
+3238592  | onechain               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | success!!!! <-
+3250805  | mu_alpha               | 2 cpus; 10GB; 150 iter (50 warmup); 1chains                      | success!!!! <-
 3275779  | subset_1chain          | 2 cpus; 10GB; 150 iter (75 warmup); 1chains; user subset         | success!!!!
-3275842  | subset_2chain          | 2 cpus; 10GB; 150 iter (75 warmup); 2chains; user subset         | running 
+3275842  | subset_2chain          | 2 cpus; 10GB; 150 iter (75 warmup); 2chains; user subset         | success!!!! <-
 3275894  | subset_sigalpha        | 2 cpus; 150 iter (75 warmup); 1chains; user subset; sigma_alpha  | success!!!!
 3276474  | random_sub1            | 2 cpus; 150 iter (75 warmup); 1chains; user sub random           | success!!!!
-3276488  | randsub2               | 2 cpus; 150 iter (75 warmup); 2chains; user sub random           | running
+3276488  | randsub2               | 2 cpus; 150 iter (75 warmup); 2chains; user sub random           | success!!!! <-
 --------------------------------------------------------------------------------------------------------------------------
 france
 --------------------------------------------------------------------------------------------------------------------------
@@ -53,7 +53,7 @@ Stage 2:
     - expected time for each job: 186/(1800/18)*4*100 = 744 sec = 12.4 mins
     - required mem for each: 60GB
     - required cpus: 20
-
+    - time: 1.5*497*167/(60*60) =~ 35h
 Stage 2 France:
     - number users: 43865
     - Run array of jobs each of 1415 users -> 43865/1415 = 31 jobs
@@ -61,3 +61,30 @@ Stage 2 France:
     - required mem for each: 60GB ?
     - required cpus: 20
     - 43865/31
+    - time: 1.5*497*31/(60*60) =~ 35h
+
+sbatch --array=0-8 run_stage2_job.sh
+sbatch --array=9-17 run_stage2_job.sh
+sbatch --array=18-26 run_stage2_job.sh
+sbatch --array=27-35 run_stage2_job.sh
+sbatch --array=36-44 run_stage2_job.sh
+sbatch --array=45-53 run_stage2_job.sh
+sbatch --array=54-62 run_stage2_job.sh
+sbatch --array=63-71 run_stage2_job.sh
+sbatch --array=72-80 run_stage2_job.sh
+sbatch --array=81-89 run_stage2_job.sh
+sbatch --array=90-98 run_stage2_job.sh
+sbatch --array=99-107 run_stage2_job.sh
+sbatch --array=108-116 run_stage2_job.sh
+sbatch --array=117-125 run_stage2_job.sh
+sbatch --array=126-134 run_stage2_job.sh
+sbatch --array=135-143 run_stage2_job.sh
+sbatch --array=144-152 run_stage2_job.sh
+sbatch --array=153-161 run_stage2_job.sh
+sbatch --array=162-166 run_stage2_job.sh
+
+sbatch --array=0-6 run_stage2_job_fr.sh
+sbatch --array=7-13 run_stage2_job_fr.sh
+sbatch --array=14-20 run_stage2_job_fr.sh
+sbatch --array=21-27 run_stage2_job_fr.sh
+sbatch --array=28-30 run_stage2_job_fr.sh

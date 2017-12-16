@@ -79,7 +79,6 @@ def metropolis(y, alpha_i, gamma_i, phi_i, mu_beta_i, sigma_beta_i, beta_init, t
 def metropolis_worker(process_id, return_dict, **kwargs):
     samples = metropolis(**kwargs)
     return_dict[process_id] = samples
-    print('pid: {} | done'.format(getpid()))
 
 def main(n_iters, n_warmup, inital_user_ix, n_users):
     def estimation(indexes):
@@ -100,6 +99,7 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
         while ix_out < len(indexes):
             return_dict = manager.dict()
             user_ixs = indexes[ix_out:ix_out+n_parallel_jobs]
+            print("\tComputing {} parallel - 1st uid: {} | last uid: {}".format(n_parallel_jobs, user_ixs[0], user_ixs[-1]))
             ix_out += n_parallel_jobs
             jobs = []
             for i in user_ixs:
@@ -113,17 +113,20 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
                 )
                 jobs.append(p)
                 p.start()
-        
+            
             for job in jobs:
                 job.join()
 
             sorted_results = sorted(return_dict.items())
+            print("\tNum results: {}\n\t##########".format(len(sorted_results)))
             beta.extend([np.array(samples)[:, :, 0] for i, samples in sorted_results])
             theta.extend([np.array(samples)[:, :, 1] for i, samples in sorted_results])
 
         return beta, theta
 
-    data_dir = "us_results/"
+    print("N_iters: {} | n_warmup: {} | initial_user: {} | n_users: {}".format(n_iters, n_warmup, inital_user_ix, n_users))
+
+    data_dir = "us_results/subset_sigalpha/"
     #data_dir = "/scratch/dam740/1013/data/stage2/"
 
     samples_alpha = pd.read_csv(data_dir + 'samples_alpha.csv')
@@ -153,7 +156,7 @@ def main(n_iters, n_warmup, inital_user_ix, n_users):
 
     start = time.time()
     beta, theta = estimation(range(inital_user_ix,inital_user_ix+n_users))
-    print('Duration: ', time.time() - start)
+    print('Duration: {}'.format(time.time() - start))
 
     # for each user take avg between chains to get only 1 value per iteration
     beta_avg = np.mean(beta, axis=1)
