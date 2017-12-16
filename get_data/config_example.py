@@ -1,0 +1,5 @@
+congress_api_key = 'your_key'
+twitter_consumer_key = 'your_key'
+twitter_consumer_secret = 'your_key'
+twitter_access_token = 'your_key'
+twitter_access_token_secret = 'your_key'

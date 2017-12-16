@@ -1,0 +1,67 @@
+1. Decide country of experiment - get its ISO-2 code => country_code 
+1. divide elites into multiple files (the number of files == the number of twitter API accounts you have)
+2. place each of these files in remote machine along with code
+3. for each ix, f_elite in twitter_account, elites_fiels:
+       /usr/bin/time -vo log_ix.time python get_users.py 0 country_code f_elite US_elites_data_ix.csv US_users_data_ix.json &> log_ix.out &
+4. after previous step finish:
+    python merge_users.py [US_users_data_0.csv ... US_users_data_n.csv] US_users_data_final.csv &> merge_log.out &
+
+/usr/bin/time -vo log_1.time python get_users.py 0 FR fr_elites_handles_1.json fr_elites_data_1.csv fr_users_data_1.json &> log_1.out &
+/usr/bin/time -vo log_2.time python get_users.py 1 FR fr_elites_handles_2.json fr_elites_data_2.csv fr_users_data_2.json &> log_2.out &
+/usr/bin/time -vo log_3.time python get_users.py 2 FR fr_elites_handles_3.json fr_elites_data_3.csv fr_users_data_3.json &> log_3.out &
+/usr/bin/time -vo log_4.time python get_users.py 3 FR fr_elites_handles_4.json fr_elites_data_4.csv fr_users_data_4.json &> log_4.out &
+/usr/bin/time -vo log_5.time python get_users.py 4 FR fr_elites_handles_5.json fr_elites_data_5.csv fr_users_data_5.json &> log_5.out &
+/usr/bin/time -vo log_6.time python get_users.py 5 FR fr_elites_handles_6.json fr_elites_data_6.csv fr_users_data_6.json &> log_6.out &
+/usr/bin/time -vo log_7.time python get_users.py 6 FR fr_elites_handles_7.json fr_elites_data_7.csv fr_users_data_7.json &> log_7.out &
+/usr/bin/time -vo log_8.time python get_users.py 7 FR fr_elites_handles_8.json fr_elites_data_8.csv fr_users_data_8.json &> log_8.out &
+/usr/bin/time -vo log_9.time python get_users.py 8 FR fr_elites_handles_9.json fr_elites_data_9.csv fr_users_data_9.json &> log_9.out &
+/usr/bin/time -vo log_10.time python get_users.py 9 FR fr_elites_handles_10.json fr_elites_data_10.csv fr_users_data_10.json &> log_10.out &
+
+status:
+    all running from start shuffled
+
+
+analyzed 6479300 users in little less than 2 days
+total number of followers: 34107430
+estimated time: 10 days
+
+in crackle3: 
+    - running without magazines and saving every 2 elites
+
+#### NO_MEDIA #### 
+/usr/bin/time -vo log_no_media_1.time python get_users.py 0 FR fr_elites_handles_no_media_1.json fr_elites_data_no_media_1.csv fr_users_data_no_media_1.json &> log_no_media_1.out &
+/usr/bin/time -vo log_no_media_2.time python get_users.py 1 FR fr_elites_handles_no_media_2.json fr_elites_data_no_media_2.csv fr_users_data_no_media_2.json &> log_no_media_2.out &
+/usr/bin/time -vo log_no_media_3.time python get_users.py 2 FR fr_elites_handles_no_media_3.json fr_elites_data_no_media_3.csv fr_users_data_no_media_3.json &> log_no_media_3.out &
+/usr/bin/time -vo log_no_media_4.time python get_users.py 3 FR fr_elites_handles_no_media_4.json fr_elites_data_no_media_4.csv fr_users_data_no_media_4.json &> log_no_media_4.out &
+/usr/bin/time -vo log_no_media_5.time python get_users.py 4 FR fr_elites_handles_no_media_5.json fr_elites_data_no_media_5.csv fr_users_data_no_media_5.json &> log_no_media_5.out &
+/usr/bin/time -vo log_no_media_6.time python get_users.py 5 FR fr_elites_handles_no_media_6.json fr_elites_data_no_media_6.csv fr_users_data_no_media_6.json &> log_no_media_6.out &
+/usr/bin/time -vo log_no_media_7.time python get_users.py 6 FR fr_elites_handles_no_media_7.json fr_elites_data_no_media_7.csv fr_users_data_no_media_7.json &> log_no_media_7.out &
+/usr/bin/time -vo log_no_media_8.time python get_users.py 7 FR fr_elites_handles_no_media_8.json fr_elites_data_no_media_8.csv fr_users_data_no_media_8.json &> log_no_media_8.out &
+/usr/bin/time -vo log_no_media_9.time python get_users.py 8 FR fr_elites_handles_no_media_9.json fr_elites_data_no_media_9.csv fr_users_data_no_media_9.json &> log_no_media_9.out &
+/usr/bin/time -vo log_no_media_10.time python get_users.py 9 FR fr_elites_handles_no_media_10.json fr_elites_data_no_media_10.csv fr_users_data_no_media_10.json &> log_no_media_10.out &
+
+Probability of reject should be around 0.76 to get a probability of acceptance of 0.235.
+Because only around 0.86 of followers actually are fetched by the User/lookup api (the rest have changed username or deleted their account).
+So prob of acceptance = x:
+    x = 0.86*0.235
+
+About 20 percent of the accepted users will meet the criteria. So actual probability of acceptence is around 0.2*0.2=0.04,
+where the second 0.2 indicates the percentage of users that pass the filters.
+
+#### MEDIA ####
+
+/usr/bin/time -vo log_1.time python get_users.py 0 FR fr_elites_handles_media_1.json fr_elites_data_media_1.csv fr_users_data_media_1.json --prob_reject 0.765 &> log_1.out &
+/usr/bin/time -vo log_2.time python get_users.py 1 FR fr_elites_handles_media_2.json fr_elites_data_media_2.csv fr_users_data_media_2.json --prob_reject 0.765 &> log_2.out &
+/usr/bin/time -vo log_3.time python get_users.py 2 FR fr_elites_handles_media_3.json fr_elites_data_media_3.csv fr_users_data_media_3.json --prob_reject 0.765 &> log_3.out &
+/usr/bin/time -vo log_4.time python get_users.py 3 FR fr_elites_handles_media_4.json fr_elites_data_media_4.csv fr_users_data_media_4.json --prob_reject 0.765 &> log_4.out &
+/usr/bin/time -vo log_5.time python get_users.py 4 FR fr_elites_handles_media_5.json fr_elites_data_media_5.csv fr_users_data_media_5.json --prob_reject 0.765 &> log_5.out &
+/usr/bin/time -vo log_6.time python get_users.py 5 FR fr_elites_handles_media_6.json fr_elites_data_media_6.csv fr_users_data_media_6.json --prob_reject 0.765 &> log_6.out &
+/usr/bin/time -vo log_7.time python get_users.py 6 FR fr_elites_handles_media_7.json fr_elites_data_media_7.csv fr_users_data_media_7.json --prob_reject 0.765 &> log_7.out &
+/usr/bin/time -vo log_8.time python get_users.py 7 FR fr_elites_handles_media_8.json fr_elites_data_media_8.csv fr_users_data_media_8.json --prob_reject 0.765 &> log_8.out &
+/usr/bin/time -vo log_9.time python get_users.py 8 FR fr_elites_handles_media_9.json fr_elites_data_media_9.csv fr_users_data_media_9.json --prob_reject 0.765 &> log_9.out &
+/usr/bin/time -vo log_10.time python get_users.py 9 FR fr_elites_handles_media_10.json fr_elites_data_media_10.csv fr_users_data_media_10.json --prob_reject 0.765 &> log_10.out &
+/usr/bin/time -vo log_11.time python get_users.py 10 FR fr_elites_handles_media_11.json fr_elites_data_media_11.csv fr_users_data_media_11.json --prob_reject 0.765 &> log_11.out &
+
+python merge_users.py fr_users_data_no_media_1.json fr_users_data_no_media_2.json fr_users_data_no_media_3.json fr_users_data_no_media_4.json fr_users_data_no_media_5.json fr_users_data_no_media_6.json fr_users_data_no_media_7.json fr_users_data_no_media_8.json fr_users_data_no_media_9.json fr_users_data_no_media_10.json fr_users_data_media_1.json fr_users_data_media_2.json fr_users_data_media_3.json fr_users_data_media_4.json fr_users_data_media_5.json fr_users_data_media_6.json fr_users_data_media_7.json fr_users_data_media_8.json fr_users_data_media_9.json fr_users_data_media_10.json fr_users_data_media_11.json fr_users_data.csv
+
+python merge_elites.py fr_elites_data_no_media_1.csv fr_elites_data_no_media_2.csv fr_elites_data_no_media_3.csv fr_elites_data_no_media_4.csv fr_elites_data_no_media_5.csv fr_elites_data_no_media_6.csv fr_elites_data_no_media_7.csv fr_elites_data_no_media_8.csv fr_elites_data_no_media_9.csv fr_elites_data_no_media_10.csv fr_elites_data_media_1.csv fr_elites_data_media_2.csv fr_elites_data_media_3.csv fr_elites_data_media_4.csv fr_elites_data_media_5.csv fr_elites_data_media_6.csv fr_elites_data_media_7.csv fr_elites_data_media_8.csv fr_elites_data_media_9.csv fr_elites_data_media_10.csv fr_elites_data_media_11.csv fr_elites_data.csv
